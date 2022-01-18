@@ -25,3 +25,9 @@ from pyalgorithms cimport avltree
 
 AVLTree = avltree.AVLTree
 AVLTreeNode = avltree.AVLTreeNode
+
+from pyalgorithms import rbtree
+from pyalgorithms cimport rbtree
+
+RBTree = rbtree.RBTree
+RBTreeNode = rbtree.RBTreeNode

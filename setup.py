@@ -58,6 +58,11 @@ ext_modules = [
               language="c",
               library_dirs=["c-algorithms/src"],
               include_dirs=['c-algorithms/src']),
+    Extension("pyalgorithms.rbtree",
+              sources=["pyalgorithms/rbtree.pyx", "c-algorithms/src/rb-tree.c"],
+              language="c",
+              library_dirs=["c-algorithms/src"],
+              include_dirs=['c-algorithms/src']),
     Extension("pyalgorithms.utils",
               sources=["pyalgorithms/utils.pyx"],
               language="c")

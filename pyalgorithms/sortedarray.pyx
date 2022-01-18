@@ -15,13 +15,13 @@ cdef int sortedarraycomparefunc(c_sortedarray.SortedArrayValue value1, c_sorteda
 
 cdef class SortedArray:
     def __cinit__(self, unsigned int length, object equ_func, object cmp_func):
+        self._carray = c_sortedarray.sortedarray_new(length, sortedarrayequalfunc, sortedarraycomparefunc)
+        if self._carray is NULL:
+            raise MemoryError()
         Py_INCREF(equ_func)
         Py_INCREF(cmp_func)
         self._equ_func = equ_func
         self._cmp_func = cmp_func
-        self._carray = c_sortedarray.sortedarray_new(length, sortedarrayequalfunc, sortedarraycomparefunc)
-        if self._carray is NULL:
-            raise MemoryError()
 
     def __del__(self):
         Py_DECREF(self._equ_func)
@@ -38,8 +38,8 @@ cdef class SortedArray:
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef c_sortedarray.SortedArrayValue * ret
         if i < 0:
-            i = len(self) + i
-        if i < 0 or <unsigned int> i > len(self) - 1:
+            i = <int>len(self) + i
+        if i < 0 or <Py_ssize_t> i > len(self) - 1:
             raise IndexError("index out of range")
         ret = c_sortedarray.sortedarray_get(self._carray, <unsigned int> i)
         if ret is NULL:
@@ -69,7 +69,7 @@ cdef class SortedArray:
     cpdef  remove_range(self, int index, unsigned int length):
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int i
-        for i in range(i, i + length):
+        for i in range(index, index + <int>length):
             Py_DECREF(self.get(i))
         c_sortedarray.sortedarray_remove_range(self._carray, <unsigned int> index, length)
 
