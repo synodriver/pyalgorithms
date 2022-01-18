@@ -4,10 +4,8 @@ from cpython.ref cimport Py_INCREF, Py_DECREF
 
 from pyalgorithms cimport c_sortedarray
 
-cdef dict _funcs  # store all instances' callbacks
 cdef object _equ_func  # dynamic seted when used
 cdef object _cmp_func
-
 
 cdef int sortedarrayequalfunc(c_sortedarray.SortedArrayValue value1, c_sortedarray.SortedArrayValue value2) with gil:
     return _equ_func(<object> value1, <object> value2)
@@ -19,16 +17,16 @@ cdef class SortedArray:
     def __cinit__(self, unsigned int length, object equ_func, object cmp_func):
         Py_INCREF(equ_func)
         Py_INCREF(cmp_func)
-        _funcs[id(self)] = (equ_func, cmp_func)
+        self._equ_func = equ_func
+        self._cmp_func = cmp_func
         self._carray = c_sortedarray.sortedarray_new(length, sortedarrayequalfunc, sortedarraycomparefunc)
         if self._carray is NULL:
             raise MemoryError()
 
     def __del__(self):
-        equ_func, cmp_func = _funcs[id(self)]
-        Py_DECREF(equ_func)
-        Py_DECREF(cmp_func)
-        del _funcs[id(self)]
+        Py_DECREF(self._equ_func)
+        Py_DECREF(self._cmp_func)
+
 
     def __dealloc__(self):
         if self._carray is not NULL:
@@ -37,7 +35,7 @@ cdef class SortedArray:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef object  get(self, int i):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef c_sortedarray.SortedArrayValue * ret
         if i < 0:
             i = len(self) + i
@@ -55,21 +53,21 @@ cdef class SortedArray:
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
-    def  __len__(self):
-        _equ_func, _cmp_func = _funcs[id(self)]
+    def __len__(self):
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         return c_sortedarray.sortedarray_length(self._carray)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     def __delitem__(self, int index):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         Py_DECREF(self.get(index))
         c_sortedarray.sortedarray_remove(self._carray, <unsigned int> index)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef  remove_range(self, int index, unsigned int length):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int i
         for i in range(i, i + length):
             Py_DECREF(self.get(i))
@@ -78,7 +76,7 @@ cdef class SortedArray:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef int insert(self, object data):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         if not c_sortedarray.sortedarray_insert(self._carray, <c_sortedarray.SortedArrayValue> data):
             raise MemoryError()
         Py_INCREF(data)
@@ -86,7 +84,7 @@ cdef class SortedArray:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef int index_of(self, object data):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int ret
         ret = c_sortedarray.sortedarray_index_of(self._carray, <c_sortedarray.SortedArrayValue> data)
         if ret == -1:
@@ -96,7 +94,7 @@ cdef class SortedArray:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef clear(self):
-        _equ_func, _cmp_func = _funcs[id(self)]
+        _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int i
         for i in range(len(self)):
             Py_DECREF(self.get(i))

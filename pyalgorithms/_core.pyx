@@ -19,3 +19,9 @@ from pyalgorithms import sortedarray
 from pyalgorithms cimport sortedarray
 
 SortedArray = sortedarray.SortedArray
+
+from pyalgorithms import avltree
+from pyalgorithms cimport avltree
+
+AVLTree = avltree.AVLTree
+AVLTreeNode = avltree.AVLTreeNode
