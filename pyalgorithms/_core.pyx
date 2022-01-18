@@ -13,5 +13,9 @@ TrieNotFound = trie.TrieNotFound
 from pyalgorithms import arraylist
 from pyalgorithms cimport arraylist
 
-
 ArrayList = arraylist.ArrayList
+
+from pyalgorithms import sortedarray
+from pyalgorithms cimport sortedarray
+
+SortedArray = sortedarray.SortedArray

@@ -121,9 +121,13 @@ cdef class ArrayList:
         finally:
             Py_DECREF(compare_func)
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __len__(self):
         return self._carraylist.length
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __getitem__(self, int item):
         if item < 0:
             item = self._carraylist.length + item
@@ -131,6 +135,8 @@ cdef class ArrayList:
             raise IndexError("index out of range")
         return <object> self._carraylist.data[item]
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __setitem__(self, int key, object value):
         if key < 0:
             key = self._carraylist.length + key
@@ -140,5 +146,7 @@ cdef class ArrayList:
         self._carraylist.data[key] = <c_arraylist.ArrayListValue> value
         Py_INCREF(<object> self._carraylist.data[key])
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __delitem__(self, key):
         self.remove(key)

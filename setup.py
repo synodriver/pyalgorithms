@@ -48,6 +48,11 @@ ext_modules = [
               language="c",
               library_dirs=["c-algorithms/src"],
               include_dirs=['c-algorithms/src/']),
+    Extension("pyalgorithms.sortedarray",
+              sources=["pyalgorithms/sortedarray.pyx", "c-algorithms/src/sortedarray.c"],
+              language="c",
+              library_dirs=["c-algorithms/src"],
+              include_dirs=['c-algorithms/src/']),
     Extension("pyalgorithms.utils",
               sources=["pyalgorithms/utils.pyx"],
               language="c")
