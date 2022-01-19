@@ -101,6 +101,8 @@ cdef class AVLTree:
     cdef unsigned int num_entries(self):
         return c_avltree.avl_tree_num_entries(self._ctree)
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __len__(self):
         return self.num_entries()
 

@@ -83,6 +83,8 @@ cdef class RBTree:
     cpdef int num_entries(self):
         return c_rbtree.rb_tree_num_entries(self._ctree)
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
     def __len__(self):
         return self.num_entries()
 

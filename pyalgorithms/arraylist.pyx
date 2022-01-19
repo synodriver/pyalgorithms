@@ -150,3 +150,12 @@ cdef class ArrayList:
     @cython.boundscheck(False)
     def __delitem__(self, key):
         self.remove(key)
+
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
+    def __iter__(self):
+        cdef unsigned int i
+        for i in range(self._carraylist.length):
+            yield <object>self._carraylist.data[i]
+
+

@@ -33,7 +33,7 @@ cdef class Trie:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef insert_binary(self, const unsigned char[:] key, object value):
-        if not c_trie.trie_insert_binary(self._ctrie,&key[0], <int>key.shape[0],<c_trie.TrieValue>value):
+        if not c_trie.trie_insert_binary(self._ctrie,<unsigned char*>&key[0], <int>key.shape[0],<c_trie.TrieValue>value):
             raise TrieNotFound("not found in the trie")
         Py_INCREF(value)
 
@@ -50,7 +50,7 @@ cdef class Trie:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef object lookup_binary(self, const unsigned char[:] key):
-        cdef PyObject* value = <PyObject*> c_trie.trie_lookup_binary(self._ctrie,&key[0], <int>key.shape[0])
+        cdef PyObject* value = <PyObject*> c_trie.trie_lookup_binary(self._ctrie,<unsigned char*>&key[0], <int>key.shape[0])
         if value is NULL:
             raise TrieNotFound("not found in the trie")
         cdef object pyvalue = <object> value
@@ -70,11 +70,11 @@ cdef class Trie:
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef remove_binary(self, const unsigned char[:] key):
-        cdef PyObject * value = <PyObject *> c_trie.trie_lookup_binary(self._ctrie, &key[0],<int> key.shape[0])
+        cdef PyObject * value = <PyObject *> c_trie.trie_lookup_binary(self._ctrie, <unsigned char*>&key[0],<int> key.shape[0])
         if value is NULL:
             raise TrieNotFound("not found in the trie")
         Py_DECREF(<object> value)
-        if not c_trie.trie_remove_binary(self._ctrie,  &key[0], <int> key.shape[0]):
+        if not c_trie.trie_remove_binary(self._ctrie,   <unsigned char*>&key[0], <int> key.shape[0]):
             raise TrieNotFound("not found in the trie")
 
     @cython.wraparound(False)
