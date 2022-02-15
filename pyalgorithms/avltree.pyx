@@ -16,74 +16,85 @@ cdef class AVLTree:
             raise MemoryError()
         Py_INCREF(compare_func)
         self._cmpfunc = compare_func
-
-    def __del__(self):
-        Py_DECREF(self._cmpfunc)
+        self.strongrefs = []
 
     def __dealloc__(self):
+        self.strongrefs.clear()
         if self._ctree is not NULL:
             c_avltree.avl_tree_free(self._ctree)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef AVLTreeNode insert(self, object key, object value):
+        _cmpfunc = self._cmpfunc
         cdef c_avltree.AVLTreeNode * node
         node = c_avltree.avl_tree_insert(self._ctree, <c_avltree.AVLTreeKey> key, <c_avltree.AVLTreeValue> value)
         if node is NULL:
             raise MemoryError()
-        Py_INCREF(key)
-        Py_INCREF(value)
+        self.strongrefs.append(key)
+        self.strongrefs.append(value)
         return AVLTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef remove_node(self, AVLTreeNode node):
+        _cmpfunc = self._cmpfunc
         c_avltree.avl_tree_remove_node(self._ctree, node._cnode)
-        Py_DECREF(<object> c_avltree.avl_tree_node_key((node._cnode)))
-        Py_DECREF(<object> c_avltree.avl_tree_node_value(node._cnode))
+        self.strongrefs.remove(<object> c_avltree.avl_tree_node_key(node._cnode))
+        self.strongrefs.remove(<object> c_avltree.avl_tree_node_value(node._cnode))
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef remove(self, object key):
+        _cmpfunc = self._cmpfunc
         cdef c_avltree.AVLTreeNode * node
         node = c_avltree.avl_tree_lookup_node(self._ctree, <c_avltree.AVLTreeKey> key)
         if node is NULL:
             raise ValueError("no entry with the given key is found")
-        Py_DECREF(<object> c_avltree.avl_tree_node_key(node))
-        Py_DECREF(<object> c_avltree.avl_tree_node_value(node))
+        self.strongrefs.remove(<object> c_avltree.avl_tree_node_key(node))
+        self.strongrefs.remove(<object> c_avltree.avl_tree_node_value(node))
         if not c_avltree.avl_tree_remove(self._ctree, <c_avltree.AVLTreeKey> key):
             raise ValueError("no node with the specified key was found in the tree")
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef AVLTreeNode lookup_node(self, object key):
+        _cmpfunc = self._cmpfunc
         cdef c_avltree.AVLTreeNode * node
         node = c_avltree.avl_tree_lookup_node(self._ctree, <c_avltree.AVLTreeKey> key)
         if node is NULL:
             raise ValueError("no entry with the given key is found")
+        Py_INCREF(<object> c_avltree.avl_tree_node_key(node))
+        Py_INCREF(<object> c_avltree.avl_tree_node_value(node))
         return AVLTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef object lookup(self, object key):
+        _cmpfunc = self._cmpfunc
         cdef c_avltree.AVLTreeValue value
         value = c_avltree.avl_tree_lookup(self._ctree, <c_avltree.AVLTreeKey> key)
         if value is NULL:
             raise ValueError("no entry with the given key is found")
+        Py_INCREF(<object> value)
         return <object> value
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef AVLTreeNode root_node(self):
+        _cmpfunc = self._cmpfunc
         cdef c_avltree.AVLTreeNode * node
         node = c_avltree.avl_tree_root_node(self._ctree)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_avltree.avl_tree_node_key(node))
+        Py_INCREF(<object> c_avltree.avl_tree_node_value(node))
         return AVLTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef list to_array(self):
+        _cmpfunc = self._cmpfunc
         cdef:
             unsigned int i
             unsigned int length = self.num_entries()
@@ -106,6 +117,12 @@ cdef class AVLTree:
     def __len__(self):
         return self.num_entries()
 
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
+    def __iter__(self):
+        return iter(self.to_array())
+
+
 cdef class AVLTreeNode:
     # cdef c_avltree.AVLTreeNode * _cnode
     @staticmethod
@@ -125,7 +142,9 @@ cdef class AVLTreeNode:
 
     @property
     def key(self):
-        return <object> self.node_key()
+        ret = <object> self.node_key()
+        Py_INCREF(ret)
+        return ret
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
@@ -134,7 +153,9 @@ cdef class AVLTreeNode:
 
     @property
     def value(self):
-        return <object> self.node_value()
+        ret = <object> self.node_value()
+        Py_INCREF(ret)
+        return ret
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
@@ -147,6 +168,8 @@ cdef class AVLTreeNode:
         node = self.node_child(c_avltree.AVL_TREE_NODE_LEFT)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_avltree.avl_tree_node_key(node))
+        Py_INCREF(<object> c_avltree.avl_tree_node_value(node))
         return AVLTreeNode.from_ptr(node)
 
     @property
@@ -155,6 +178,8 @@ cdef class AVLTreeNode:
         node = self.node_child(c_avltree.AVL_TREE_NODE_RIGHT)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_avltree.avl_tree_node_key(node))
+        Py_INCREF(<object> c_avltree.avl_tree_node_value(node))
         return AVLTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
@@ -168,6 +193,8 @@ cdef class AVLTreeNode:
         node = self.node_parent()
         if node is NULL:
             return None
+        Py_INCREF(<object> c_avltree.avl_tree_node_key(node))
+        Py_INCREF(<object> c_avltree.avl_tree_node_value(node))
         return AVLTreeNode.from_ptr(node)
 
     @cython.wraparound(False)

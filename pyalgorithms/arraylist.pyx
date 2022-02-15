@@ -25,6 +25,7 @@ cdef class ArrayList:
             raise MemoryError()
 
     def __dealloc__(self):
+        self.clear()
         if self._carraylist is not NULL:
             c_arraylist.arraylist_free(self._carraylist)
 
@@ -133,6 +134,7 @@ cdef class ArrayList:
             item = self._carraylist.length + item
         if item < 0 or <unsigned int>item > self._carraylist.length - 1:
             raise IndexError("index out of range")
+        Py_INCREF(<object> self._carraylist.data[item])
         return <object> self._carraylist.data[item]
 
     @cython.wraparound(False)

@@ -12,11 +12,15 @@ class TestExt(TestCase):
         self.arr = ArrayList()
         pass
 
-    def test_lookup(self):
+    def test_lookup_fail(self):
         try:
             self.trie.lookup("haha")
         except TrieNotFound:
             print("ok")
+
+    def test_lookup(self):
+        self.trie.insert("haha","haha的值")
+        self.assertEqual(self.trie.lookup("haha"),"haha的值")
 
     def test_lookup_bin(self):
         try:

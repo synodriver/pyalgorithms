@@ -16,71 +16,85 @@ cdef class RBTree:
             raise MemoryError()
         Py_INCREF(compare_func)
         self._compare_func = compare_func
+        self.strongrefs = []
 
     def __dealloc__(self):
+        self.strongrefs.clear()
         if self._ctree is not NULL:
             c_rbtree.rb_tree_free(self._ctree)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef RBTreeNode insert(self, object key, object value):
+        _cmp_func = self._compare_func
         cdef c_rbtree.RBTreeNode * node
         node = c_rbtree.rb_tree_insert(self._ctree, <c_rbtree.RBTreeKey> key, <c_rbtree.RBTreeValue> value)
         if node is NULL:
             raise MemoryError()
-        Py_INCREF(key)
-        Py_INCREF(value)
+        self.strongrefs.append(key)
+        self.strongrefs.append(value)
         return RBTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef remove_node(self, RBTreeNode node):
-        Py_DECREF(<object> c_rbtree.rb_tree_node_key(node._cnode))
-        Py_DECREF(<object> c_rbtree.rb_tree_node_value(node._cnode))
+        _cmp_func = self._compare_func
+        self.strongrefs.remove(<object> c_rbtree.rb_tree_node_key(node._cnode))
+        self.strongrefs.remove(<object> c_rbtree.rb_tree_node_value(node._cnode))
         c_rbtree.rb_tree_remove_node(self._ctree, node._cnode)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef remove(self, object key):
+        _cmp_func = self._compare_func
         cdef c_rbtree.RBTreeNode *node
         node = c_rbtree.rb_tree_lookup_node(self._ctree, <c_rbtree.RBTreeKey> key)
         if node is NULL:
             raise ValueError("no entry with the given key is found.")
         if not c_rbtree.rb_tree_remove(self._ctree, <c_rbtree.RBTreeKey> key):
             raise ValueError("no node with the specified key was found in the tree")
-        Py_DECREF(<object> c_rbtree.rb_tree_node_key(node))
-        Py_DECREF(<object> c_rbtree.rb_tree_node_value(node))
+        self.strongrefs.remove(<object> c_rbtree.rb_tree_node_key(node))
+        self.strongrefs.remove(<object> c_rbtree.rb_tree_node_value(node))
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef RBTreeNode lookup_node(self, object key):
+        _cmp_func = self._compare_func
         cdef c_rbtree.RBTreeNode *node
         node = c_rbtree.rb_tree_lookup_node(self._ctree, <c_rbtree.RBTreeKey> key)
         if node is NULL:
             raise ValueError("no entry with the given key is found.")
+        Py_INCREF(<object> c_rbtree.rb_tree_node_key(node))
+        Py_INCREF(<object> c_rbtree.rb_tree_node_value(node))
         return RBTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef object lookup(self, object key):
+        _cmp_func = self._compare_func
         cdef c_rbtree.RBTreeValue data
         data = c_rbtree.rb_tree_lookup(self._ctree, <c_rbtree.RBTreeKey> key)
         if data is NULL:
             raise ValueError("no entry with the given key is found.")
+        Py_INCREF(<object> data)
         return <object> data
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef RBTreeNode root_node(self):
+        _cmp_func = self._compare_func
         cdef c_rbtree.RBTreeNode *node
         node = c_rbtree.rb_tree_root_node(self._ctree)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_rbtree.rb_tree_node_key(node))
+        Py_INCREF(<object> c_rbtree.rb_tree_node_value(node))
         return RBTreeNode.from_ptr(node)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef int num_entries(self):
+        _cmp_func = self._compare_func
         return c_rbtree.rb_tree_num_entries(self._ctree)
 
     @cython.wraparound(False)
@@ -125,11 +139,15 @@ cdef class RBTreeNode:
 
     @property
     def key(self):
-        return <object>self.node_key()
+        ret = <object>self.node_key()
+        Py_INCREF(ret)
+        return ret
 
     @property
     def value(self):
-        return <object>self.node_value()
+        ret = <object>self.node_value()
+        Py_INCREF(ret)
+        return ret
 
     @property
     def leftchild(self):
@@ -137,6 +155,8 @@ cdef class RBTreeNode:
         node = self.node_child(c_rbtree.RB_TREE_NODE_LEFT)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_rbtree.rb_tree_node_key(node))
+        Py_INCREF(<object> c_rbtree.rb_tree_node_value(node))
         return RBTreeNode.from_ptr(node)
 
     @property
@@ -145,6 +165,8 @@ cdef class RBTreeNode:
         node = self.node_child(c_rbtree.RB_TREE_NODE_RIGHT)
         if node is NULL:
             return None
+        Py_INCREF(<object> c_rbtree.rb_tree_node_key(node))
+        Py_INCREF(<object> c_rbtree.rb_tree_node_value(node))
         return RBTreeNode.from_ptr(node)
 
     @property
@@ -153,4 +175,6 @@ cdef class RBTreeNode:
         node = self.node_parent()
         if node is NULL:
             return None
+        Py_INCREF(<object> c_rbtree.rb_tree_node_key(node))
+        Py_INCREF(<object> c_rbtree.rb_tree_node_value(node))
         return RBTreeNode.from_ptr(node)

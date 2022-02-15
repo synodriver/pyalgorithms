@@ -3,6 +3,7 @@ from pyalgorithms cimport c_trie
 
 cdef class Trie:
     cdef c_trie.Trie * _ctrie
+    cdef list strongrefs
 
     cpdef insert(self, key, object value)
 

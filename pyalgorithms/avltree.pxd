@@ -4,7 +4,7 @@ from pyalgorithms cimport c_avltree
 cdef class AVLTree:
     cdef c_avltree.AVLTree * _ctree
     cdef object _cmpfunc
-
+    cdef list strongrefs
     cpdef AVLTreeNode insert(self, object key, object value)
 
     cpdef remove_node(self, AVLTreeNode node)

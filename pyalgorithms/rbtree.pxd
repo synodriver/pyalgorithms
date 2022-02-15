@@ -4,6 +4,7 @@ from pyalgorithms cimport c_rbtree
 cdef class RBTree:
     cdef c_rbtree.RBTree * _ctree
     cdef object _compare_func   # callback
+    cdef list strongrefs
 
     cpdef RBTreeNode insert(self, object key, object value)
 

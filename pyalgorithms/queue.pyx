@@ -23,6 +23,7 @@ cdef class Queue:
             raise MemoryError()
 
     def __dealloc__(self):
+        self.clear()
         if self._cqueue is not NULL:
             c_queue.queue_free(self._cqueue)
 
@@ -72,6 +73,7 @@ cdef class Queue:
             # or that it happens to contain a 0 value
             if c_queue.queue_is_empty(self._cqueue):
                 raise IndexError("Queue is empty")
+        Py_INCREF(<object> value)
         return <object>value
 
     @cython.wraparound(False)
@@ -83,6 +85,7 @@ cdef class Queue:
             # or that it happens to contain a 0 value
             if c_queue.queue_is_empty(self._cqueue):
                 raise IndexError("Queue is empty")
+        Py_INCREF(<object>value)
         return <object>value
 
     @cython.wraparound(False)
@@ -91,7 +94,6 @@ cdef class Queue:
         if c_queue.queue_is_empty(self._cqueue):
             raise IndexError("Queue is empty")
         cdef object value = <object> c_queue.queue_pop_tail(self._cqueue)
-        Py_DECREF(value)
         self.len -= 1
         return value
 
@@ -101,7 +103,6 @@ cdef class Queue:
         if c_queue.queue_is_empty(self._cqueue):
             raise IndexError("Queue is empty")
         cdef object value = <object> c_queue.queue_pop_head(self._cqueue)
-        Py_DECREF(value)
         self.len -= 1
         return value
 
@@ -114,7 +115,8 @@ cdef class Queue:
     @cython.boundscheck(False)
     cpdef clear(self):
         while not self.empty():
-            self.pop()
+            item = self.pop()
+            Py_DECREF(item)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)

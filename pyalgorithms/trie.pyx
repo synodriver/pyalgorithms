@@ -17,8 +17,10 @@ cdef class Trie:
         self._ctrie = c_trie.trie_new()
         if self._ctrie is NULL:
             raise MemoryError()
+        self.strongrefs = []
 
     def __dealloc__(self):
+        self.strongrefs.clear()
         if self._ctrie is not NULL:
             c_trie.trie_free(self._ctrie)
 
@@ -28,14 +30,14 @@ cdef class Trie:
         cdef char* key_c = utils._chars(key)
         if not c_trie.trie_insert(self._ctrie,key_c,<c_trie.TrieValue>value):
             raise MemoryError()
-        Py_INCREF(value)
+        self.strongrefs.append(value)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
     cpdef insert_binary(self, const unsigned char[:] key, object value):
         if not c_trie.trie_insert_binary(self._ctrie,<unsigned char*>&key[0], <int>key.shape[0],<c_trie.TrieValue>value):
             raise TrieNotFound("not found in the trie")
-        Py_INCREF(value)
+        self.strongrefs.append(value)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
@@ -45,6 +47,7 @@ cdef class Trie:
         if value is NULL:
             raise TrieNotFound("not found in the trie")
         cdef object pyvalue = <object> value
+        Py_INCREF(pyvalue)
         return pyvalue
 
     @cython.wraparound(False)
@@ -54,6 +57,7 @@ cdef class Trie:
         if value is NULL:
             raise TrieNotFound("not found in the trie")
         cdef object pyvalue = <object> value
+        Py_INCREF(pyvalue)
         return pyvalue
 
     @cython.wraparound(False)
@@ -63,7 +67,7 @@ cdef class Trie:
         cdef PyObject * value = <PyObject *> c_trie.trie_lookup(self._ctrie, key_c)
         if value is NULL:
             raise TrieNotFound("not found in the trie")
-        Py_DECREF(<object>value)
+        self.strongrefs.remove(<object>value)
         if not c_trie.trie_remove(self._ctrie, key_c):
             raise TrieNotFound("not found in the trie")
 
@@ -73,7 +77,7 @@ cdef class Trie:
         cdef PyObject * value = <PyObject *> c_trie.trie_lookup_binary(self._ctrie, <unsigned char*>&key[0],<int> key.shape[0])
         if value is NULL:
             raise TrieNotFound("not found in the trie")
-        Py_DECREF(<object> value)
+        self.strongrefs.remove(<object> value)
         if not c_trie.trie_remove_binary(self._ctrie,   <unsigned char*>&key[0], <int> key.shape[0]):
             raise TrieNotFound("not found in the trie")
 

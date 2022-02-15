@@ -4,7 +4,7 @@ from pyalgorithms cimport c_sortedarray
 cdef class SortedArray:
     cdef c_sortedarray.SortedArray * _carray
     cdef object _equ_func, _cmp_func
-
+    cdef object raw_get(self, int i)
     cpdef object  get(self, int i)
 
     cpdef remove_range(self,int index, unsigned int length)

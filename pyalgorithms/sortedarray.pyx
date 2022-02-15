@@ -23,18 +23,18 @@ cdef class SortedArray:
         self._equ_func = equ_func
         self._cmp_func = cmp_func
 
-    def __del__(self):
-        Py_DECREF(self._equ_func)
-        Py_DECREF(self._cmp_func)
-
-
     def __dealloc__(self):
+        cdef unsigned int i
         if self._carray is not NULL:
+            i = 0
+            for i in range(c_sortedarray.sortedarray_length(self._carray)):
+                item = self.raw_get(i)
+                Py_DECREF(item)
             c_sortedarray.sortedarray_free(self._carray)
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
-    cpdef object  get(self, int i):
+    cdef object raw_get(self, int i):
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef c_sortedarray.SortedArrayValue * ret
         if i < 0:
@@ -45,6 +45,13 @@ cdef class SortedArray:
         if ret is NULL:
             raise IndexError("index out of range")
         return <object> ret[0]
+
+    @cython.wraparound(False)
+    @cython.boundscheck(False)
+    cpdef object get(self, int i):
+        ret = self.get(i)
+        Py_INCREF(ret)
+        return ret
 
     @cython.wraparound(False)
     @cython.boundscheck(False)
@@ -61,7 +68,7 @@ cdef class SortedArray:
     @cython.boundscheck(False)
     def __delitem__(self, int index):
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
-        Py_DECREF(self.get(index))
+        Py_DECREF(self.raw_get(index))
         c_sortedarray.sortedarray_remove(self._carray, <unsigned int> index)
 
     @cython.wraparound(False)
@@ -70,7 +77,7 @@ cdef class SortedArray:
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int i
         for i in range(index, index + <int>length):
-            Py_DECREF(self.get(i))
+            Py_DECREF(self.raw_get(i))
         c_sortedarray.sortedarray_remove_range(self._carray, <unsigned int> index, length)
 
     @cython.wraparound(False)
@@ -97,5 +104,5 @@ cdef class SortedArray:
         _equ_func, _cmp_func = self._equ_func, self._cmp_func
         cdef int i
         for i in range(len(self)):
-            Py_DECREF(self.get(i))
+            Py_DECREF(self.raw_get(i))
         c_sortedarray.sortedarray_clear(self._carray)
