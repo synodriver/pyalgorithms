@@ -24,8 +24,18 @@ class build_ext_compiler_check(build_ext):
         super().build_extensions()
 
 
-c_source = ["c-algorithms/src/" + file for file in os.listdir('c-algorithms/src') if file.endswith('c')]
-pyx_source = ["pyalgorithms/" + file for file in os.listdir('pyalgorithms') if file.endswith('pyx')]
+c_source = [
+    f"c-algorithms/src/{file}"
+    for file in os.listdir('c-algorithms/src')
+    if file.endswith('c')
+]
+
+pyx_source = [
+    f"pyalgorithms/{file}"
+    for file in os.listdir('pyalgorithms')
+    if file.endswith('pyx')
+]
+
 
 ext_modules = [
     Extension("pyalgorithms._core",

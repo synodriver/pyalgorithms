@@ -10,7 +10,6 @@ class TestExt(TestCase):
     def setUp(self) -> None:
         self.trie = Trie()
         self.arr = ArrayList()
-        pass
 
     def test_lookup_fail(self):
         try:
